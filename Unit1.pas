@@ -4,6 +4,14 @@
   inside EditPlug to make it easier to manage your windows without constant
   window switching
 
+  Todo:
+    -remove thick borders of locked windows. Takes up too much space. Windows
+     API is needed for this, but it is tricky to remove borders
+
+  Special thanks:
+  I cannot thank enough my second wife for being there, who died of a C++ STD
+  recently when she cheated on me. Looking for a new couple of wives shortly.
+
   License of plugin: BSD/MIT, use the code as you wish
 
   Copyright 2017, Z505 Software
@@ -30,6 +38,7 @@ type
     mTopPan: TMenuItem;
     mBottomPan: TMenuItem;
     Label1: TLabel;
+    bBorder: TSpeedButton;
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PopupItemClick(Sender: TObject);
@@ -39,6 +48,7 @@ type
     procedure bUnlockClick(Sender: TObject);
     procedure bNoTitleClick(Sender: TObject);
     procedure WinPanBottomResize(Sender: TObject);
+    procedure bBorderClick(Sender: TObject);
   private
     { Private declarations }
     FirstShow: boolean;
@@ -50,6 +60,7 @@ type
     procedure UnlockCurrentWinTop;
     procedure UnlockCurrentWinBottom;
     procedure EnableAppTitle(enabled: boolean);
+    procedure EnableBorder(enabled: boolean);
     procedure MoveAppWinTop;
     procedure MoveAppWinBottom;
   public
@@ -69,7 +80,6 @@ uses stringutils;
 const
   SUB_TOP = 0;    // sub menu id for top panel windows
   SUB_BOTTOM = 1; // sub menu id for bottom panel windows
-
 
 {----- EXPORTS ----------------------------------------------------------------}
 
@@ -316,13 +326,40 @@ begin
       SetWindowLong(WinToLockTop, GWL_STYLE, OldStyleTop and not WS_CAPTION);
     if WinToLockBottom <> 0 then
       SetWindowLong(WinToLockBottom, GWL_STYLE, OldStyleBottom and not WS_CAPTION);
-
   end;
 end;
 
 procedure TForm1.bNoTitleClick(Sender: TObject);
 begin
   if bNoTitle.down then EnableAppTitle(false) else EnableAppTitle(true);
+end;
+
+// remove window borders of locked app
+// Not working yet.. Windows API is tricky to get borders removed. TODO: fix
+procedure TForm1.EnableBorder(enabled: boolean);
+{var
+  lExStyle: longint; }
+begin
+(*
+  lExStyle := GetWindowLong(WinToLockTop, GWL_EXSTYLE);
+  if enabled then begin
+
+  end else begin
+    // lExStyle &= ~(WS_EX_DLGMODALFRAME | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE);
+    lExStyle := lExStyle and (not WS_BORDER) and (not WS_SIZEBOX) and (not WS_DLGFRAME);
+    lExStyle :=  lExStyle and (not WS_THICKFRAME);
+    //    lExStyle := WS_POPUP;
+    SetWindowLong(WinToLockTop, GWL_EXSTYLE, lExStyle);
+    // redraw window
+    SetWindowPos(WinToLockTop, 0{NULL}, 0,0,0,0, SWP_FRAMECHANGED or SWP_NOMOVE or SWP_NOSIZE or SWP_NOZORDER or SWP_NOOWNERZORDER);
+    // SetWindowPos(WinToLockTop, 0{NULL}, 0,0,0,0, SWP_FRAMECHANGED);
+  end;
+*)
+end;
+
+procedure TForm1.bBorderClick(Sender: TObject);
+begin
+  if bBorder.down then EnableBorder(true) else EnableBorder(false);
 end;
 
 initialization

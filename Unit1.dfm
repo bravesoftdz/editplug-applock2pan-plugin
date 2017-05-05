@@ -18,7 +18,7 @@ object Form1: TForm1
   TextHeight = 13
   object Splitter1: TSplitter
     Left = 0
-    Top = 345
+    Top = 309
     Width = 304
     Height = 2
     Cursor = crVSplit
@@ -35,9 +35,9 @@ object Form1: TForm1
     BevelOuter = bvNone
     TabOrder = 0
     object bNoTitle: TSpeedButton
-      Left = 134
+      Left = 122
       Top = 0
-      Width = 57
+      Width = 51
       Height = 17
       AllowAllUp = True
       GroupIndex = 1
@@ -50,6 +50,24 @@ object Form1: TForm1
       Font.Style = []
       ParentFont = False
       OnClick = bNoTitleClick
+    end
+    object bBorder: TSpeedButton
+      Left = 176
+      Top = 0
+      Width = 45
+      Height = 17
+      AllowAllUp = True
+      GroupIndex = 2
+      Down = True
+      Caption = 'Border'
+      Enabled = False
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -9
+      Font.Name = 'MS Shell Dlg 2'
+      Font.Style = []
+      ParentFont = False
+      OnClick = bBorderClick
     end
     object bLock: TButton
       Left = 2
@@ -69,7 +87,7 @@ object Form1: TForm1
     object bUnlock: TButton
       Left = 76
       Top = 2
-      Width = 55
+      Width = 45
       Height = 15
       Caption = 'Unlock'
       Font.Charset = DEFAULT_CHARSET
@@ -86,7 +104,7 @@ object Form1: TForm1
     Left = 0
     Top = 17
     Width = 304
-    Height = 328
+    Height = 292
     Align = alTop
     BevelOuter = bvNone
     Caption = 'Top Window Panel'
@@ -96,9 +114,9 @@ object Form1: TForm1
   end
   object WinPanBottom: TPanel
     Left = 0
-    Top = 347
+    Top = 311
     Width = 304
-    Height = 307
+    Height = 343
     Align = alClient
     BevelOuter = bvNone
     Caption = 'Bottom Window Panel'
