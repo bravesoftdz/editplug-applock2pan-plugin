@@ -30,7 +30,6 @@ type
     mTopPan: TMenuItem;
     mBottomPan: TMenuItem;
     Label1: TLabel;
-    Button1: TButton;
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PopupItemClick(Sender: TObject);
