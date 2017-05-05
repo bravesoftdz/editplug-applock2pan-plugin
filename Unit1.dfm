@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 975
-  Top = 199
+  Top = 17
   BorderStyle = bsNone
   Caption = 'AppLock'
-  ClientHeight = 345
+  ClientHeight = 654
   ClientWidth = 304
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -18,7 +18,7 @@ object Form1: TForm1
   TextHeight = 13
   object Splitter1: TSplitter
     Left = 0
-    Top = 157
+    Top = 345
     Width = 304
     Height = 2
     Cursor = crVSplit
@@ -86,7 +86,7 @@ object Form1: TForm1
     Left = 0
     Top = 17
     Width = 304
-    Height = 140
+    Height = 328
     Align = alTop
     BevelOuter = bvNone
     Caption = 'Top Window Panel'
@@ -96,9 +96,9 @@ object Form1: TForm1
   end
   object WinPanBottom: TPanel
     Left = 0
-    Top = 159
+    Top = 347
     Width = 304
-    Height = 186
+    Height = 307
     Align = alClient
     BevelOuter = bvNone
     Caption = 'Bottom Window Panel'
