@@ -26,7 +26,7 @@ object Form1: TForm1
     Color = clMaroon
     ParentColor = False
   end
-  object Panel2: TPanel
+  object HeadPanel: TPanel
     Left = 0
     Top = 0
     Width = 304
@@ -35,7 +35,7 @@ object Form1: TForm1
     BevelOuter = bvNone
     TabOrder = 0
     object bNoTitle: TSpeedButton
-      Left = 122
+      Left = 182
       Top = 0
       Width = 51
       Height = 17
@@ -52,7 +52,7 @@ object Form1: TForm1
       OnClick = bNoTitleClick
     end
     object bBorder: TSpeedButton
-      Left = 176
+      Left = 236
       Top = 0
       Width = 45
       Height = 17
@@ -71,9 +71,9 @@ object Form1: TForm1
     end
     object bLock: TButton
       Left = 2
-      Top = 2
+      Top = 0
       Width = 71
-      Height = 15
+      Height = 17
       Caption = 'Lock App...'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -85,10 +85,10 @@ object Form1: TForm1
       OnClick = bLockClick
     end
     object bUnlock: TButton
-      Left = 76
-      Top = 2
+      Left = 136
+      Top = 0
       Width = 45
-      Height = 15
+      Height = 17
       Caption = 'Unlock'
       Font.Charset = DEFAULT_CHARSET
       Font.Color = clWindowText
@@ -98,6 +98,22 @@ object Form1: TForm1
       ParentFont = False
       TabOrder = 1
       OnClick = bUnlockClick
+    end
+    object edFilter: TEdit
+      Left = 72
+      Top = 1
+      Width = 64
+      Height = 16
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -9
+      Font.Name = 'MS Shell Dlg 2'
+      Font.Style = []
+      ParentFont = False
+      TabOrder = 2
+      Text = 'f i l t e r'
+      OnEnter = edFilterEnter
+      OnKeyPress = edFilterKeyPress
     end
   end
   object WinPanTop: TPanel

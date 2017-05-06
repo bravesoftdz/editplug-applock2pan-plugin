@@ -6,11 +6,17 @@
 
   StayOnTop feature available also, just to make any window stay on top
 
+  Filter feature: enter in a filter (search term) to only show windows with that
+  search term. I.e. "total" in the filter box would find Total Commander windows
+
+  ISSUES:
+    -cmd.exe windows (consoles) may have some painting issues. Instead, use
+     the stay on top feature if cmd.exe windows are not painting or drawing on the
+     screen nice after resizing. Might be able to fix this.
+
   Todo:
     -remove thick borders of locked windows. Takes up too much space. Windows
      API is needed for this, but it is tricky to remove borders
-    -filter feature. An edit box to filter the window names by a search field as
-     many people have too many windows open and need to display only some
 
   Special thanks:
   I cannot thank enough my second wife for being there, who died of a C++ STD
@@ -31,7 +37,7 @@ uses
 
 type
   TForm1 = class(TForm)
-    Panel2: TPanel;
+    HeadPanel: TPanel;
     WinPanTop: TPanel;
     bLock: TButton;
     Popup: TPopupMenu;
@@ -45,6 +51,7 @@ type
     bBorder: TSpeedButton;
     mStayOnTop: TMenuItem;
     mUndoStayOnTop: TMenuItem;
+    edFilter: TEdit;
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PopupItemClick(Sender: TObject);
@@ -57,6 +64,8 @@ type
     procedure bNoTitleClick(Sender: TObject);
     procedure WinPanBottomResize(Sender: TObject);
     procedure bBorderClick(Sender: TObject);
+    procedure edFilterKeyPress(Sender: TObject; var Key: Char);
+    procedure edFilterEnter(Sender: TObject);
   private
     { Private declarations }
     FirstShow: boolean;
@@ -64,7 +73,6 @@ type
     WinToLockBottom: HWND;
     OldStyleTop: integer;
     OldStyleBottom: integer;
-    MenuItemCount: integer;
     procedure UnlockCurrentWinTop;
     procedure UnlockCurrentWinBottom;
     procedure EnableAppTitle(enabled: boolean);
@@ -157,11 +165,11 @@ begin
   end;
 end;
 
-procedure AddMenuItem(caption: string; ID: integer);
+procedure AddMenuItem(CaptionStr: string; ID: integer);
 var mi: TMenuItem;
 begin
   mi := TMenuItem.create(form1.popup);
-  mi.caption := caption;
+  mi.caption := CaptionStr;
   case ID of
     SUB_STAYONTOP: mi.OnClick := form1.PopupItemStayOnTopClick;
     SUB_UNDOSTAY: mi.OnClick := form1.PopupItemUndoStay;
@@ -172,11 +180,18 @@ begin
   form1.popup.Items[ID].Add(mi);
 end;
 
+procedure AddMenuItems(CaptionStr: string);
+begin
+  AddMenuItem(CaptionStr, SUB_TOP);
+  AddMenuItem(CaptionStr, SUB_BOTTOM);
+  AddMenuItem(CaptionStr, SUB_STAYONTOP);
+  AddMenuItem(CaptionStr, SUB_UNDOSTAY);
+end;
+
 function EnumWindowsProc(Wnd: HWND; lParam: lParam): BOOL; stdcall;
 var
   miTop, miBottom: TMenuItem;
   txt: string;
-  // OldName: string;
   CaptionStr: string;
 begin
   Result := True;
@@ -190,14 +205,38 @@ begin
       and (lowercase(LeftStr(txt, length('editplug'))) <> 'editplug' )then
     begin
       CaptionStr := txt + ' - Handle: ' + IntToStr(Wnd);
-      AddMenuItem(CaptionStr, SUB_TOP);
-      AddMenuItem(CaptionStr, SUB_BOTTOM);
-      AddMenuItem(CaptionStr, SUB_STAYONTOP);
-      AddMenuItem(CaptionStr, SUB_UNDOSTAY);      
+      AddMenuItems(CaptionStr);
     end;
   end;
 end;
 
+// finds all open windows, but applies filter (searches for text)
+function EnumWinProcWithFilter(Wnd: HWND; lParam: lParam): BOOL; stdcall;
+var
+  miTop, miBottom: TMenuItem;
+  txt: string;
+  // OldName: string;
+  CaptionStr: string;
+  substr: string;
+begin
+  Result := True;
+  if (IsWindowVisible(Wnd) or IsIconic(wnd)) and
+    ((GetWindowLong(Wnd, GWL_HWNDPARENT) = 0) or
+    (GetWindowLong(Wnd, GWL_HWNDPARENT) = GetDesktopWindow)) and
+    (GetWindowLong(Wnd, GWL_EXSTYLE) and WS_EX_TOOLWINDOW = 0) then
+  begin
+    txt := GetText(Wnd);
+    if (wnd <> epGetMainWinHandle)
+      and (lowercase(LeftStr(txt, length('editplug'))) <> 'editplug' )then
+    begin
+      substr := lowercase(form1.edFilter.text);
+      if pos(substr, lowercase(txt)) > 0 then begin
+        CaptionStr := txt;
+        AddMenuItems(CaptionStr);
+      end;
+    end;
+  end;
+end;
 
 procedure TForm1.FormShow(Sender: TObject);
 begin
@@ -209,8 +248,6 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   FirstShow := true;
-  // menu item auto generate names
-  MenuItemCount := 0;
 end;
 
 function FindHandle(s: string): HWND;
@@ -311,15 +348,41 @@ begin
   end;
 end;
 
-procedure TForm1.PopupPopup(Sender: TObject);
+procedure MenuClearItems;
+begin
+  form1.popup.Items[SUB_TOP].Clear;
+  form1.popup.Items[SUB_BOTTOM].Clear;
+  form1.popup.Items[SUB_STAYONTOP].Clear;
+  form1.popup.Items[SUB_UNDOSTAY].Clear;
+end;
+
+procedure ApplyFilter;
+var Param: longint;
+begin
+  MenuClearItems;
+  EnumWindows(@EnumWinProcWithFilter, Param);
+end;
+
+procedure FillMenuItems(filter: boolean);
 var
   Param: Longint;
 begin
-  popup.Items[SUB_TOP].Clear;
-  popup.Items[SUB_BOTTOM].Clear;
-  popup.Items[SUB_STAYONTOP].Clear;
-  EnumWindows(@EnumWindowsProc, Param);
-  MenuItemCount := 0;
+  if filter then begin
+    ApplyFilter;
+  end else begin
+    MenuClearItems;
+    EnumWindows(@EnumWindowsProc, Param);
+  end;
+end;
+
+procedure TForm1.PopupPopup(Sender: TObject);
+begin
+  // only filter enumerated windows with search string if filter is entered into editbox
+  if (edFilter.text <> 'f i l t e r') and (edFilter.text <> '') then begin
+    FillMenuItems(true);
+  end else begin
+    FillMenuItems(false);  
+  end;
 end;
 
 // pop up menu when clicking the button
@@ -327,7 +390,10 @@ procedure TForm1.bLockClick(Sender: TObject);
 var
   pnt: TPoint;
 begin
-  if GetCursorPos(pnt) then Popup.Popup(pnt.X, pnt.Y);
+  //  if GetCursorPos(pnt) then Popup.Popup(pnt.X, pnt.Y);
+  // popup at location of form 1 0,0 position underneath HeadPanel
+  pnt := Form1.ClientToScreen(point(0,0 + HeadPanel.Height + 2));
+  Popup.Popup(pnt.x, pnt.y);
 end;
 
 // force refresh of screen, otherwise window is not redrawn nicely
@@ -451,6 +517,19 @@ end;
 procedure TForm1.WMExitSizeMove(var Msg: TMessage); {message WM_EXITSIZEMOVE;}
 begin
   ShowMessage('Panel Resize!');
+end;
+
+procedure TForm1.edFilterKeyPress(Sender: TObject; var Key: Char);
+begin
+  if ord(Key) = VK_RETURN then begin
+    Key := #0; // prevent beeping
+    bLock.Click;
+  end;
+end;
+
+procedure TForm1.edFilterEnter(Sender: TObject);
+begin
+  if edFilter.text = 'f i l t e r' then edFilter.text := '';
 end;
 
 initialization
