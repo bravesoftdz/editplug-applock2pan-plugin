@@ -4,9 +4,13 @@
   inside EditPlug to make it easier to manage your windows without constant
   window switching
 
+  StayOnTop feature available also, just to make any window stay on top
+
   Todo:
     -remove thick borders of locked windows. Takes up too much space. Windows
      API is needed for this, but it is tricky to remove borders
+    -filter feature. An edit box to filter the window names by a search field as
+     many people have too many windows open and need to display only some
 
   Special thanks:
   I cannot thank enough my second wife for being there, who died of a C++ STD
@@ -39,9 +43,13 @@ type
     mBottomPan: TMenuItem;
     Label1: TLabel;
     bBorder: TSpeedButton;
+    mStayOnTop: TMenuItem;
+    mUndoStayOnTop: TMenuItem;
     procedure FormShow(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure PopupItemClick(Sender: TObject);
+    procedure PopupItemStayOnTopClick(Sender: TObject);
+    procedure PopupItemUndoStay(Sender: TObject);
     procedure PopupPopup(Sender: TObject);
     procedure bLockClick(Sender: TObject);
     procedure WinPanTopResize(Sender: TObject);
@@ -63,6 +71,8 @@ type
     procedure EnableBorder(enabled: boolean);
     procedure MoveAppWinTop;
     procedure MoveAppWinBottom;
+    // After resize finished event
+    procedure WMExitSizeMove(var Msg: TMessage); message WM_EXITSIZEMOVE;
   public
     { Public declarations }
   end;
@@ -80,6 +90,8 @@ uses stringutils;
 const
   SUB_TOP = 0;    // sub menu id for top panel windows
   SUB_BOTTOM = 1; // sub menu id for bottom panel windows
+  SUB_STAYONTOP = 2; // just a stay on top feature, doesn't lock window in place
+  SUB_UNDOSTAY = 3; // undo stay on top of a window
 
 {----- EXPORTS ----------------------------------------------------------------}
 
@@ -97,10 +109,13 @@ begin
   end else begin
     form1.show;
     // make sure application is in focus
-    if form1.WinToLockTop <> 0 then begin
+    if form1.WinToLockBottom <> 0 then begin
       SetFocus(form1.WinToLockBottom);
       windows.SetForegroundWindow(form1.WinToLockBottom);
-       SetFocus(form1.WinToLockTop);
+    end;
+
+    if form1.WinToLockTop <> 0 then begin
+      SetFocus(form1.WinToLockTop);
       windows.SetForegroundWindow(form1.WinToLockTop);
     end;
   end;
@@ -112,7 +127,7 @@ begin
   if assigned(form1) then begin
     // return current locked window to taskbar/desktop
     form1.UnlockCurrentWinTop;
-    form1.UnlockCurrentWinBottom;    
+    form1.UnlockCurrentWinBottom;
     form1.Free;
     form1:=nil;
   end;
@@ -142,6 +157,21 @@ begin
   end;
 end;
 
+procedure AddMenuItem(caption: string; ID: integer);
+var mi: TMenuItem;
+begin
+  mi := TMenuItem.create(form1.popup);
+  mi.caption := caption;
+  case ID of
+    SUB_STAYONTOP: mi.OnClick := form1.PopupItemStayOnTopClick;
+    SUB_UNDOSTAY: mi.OnClick := form1.PopupItemUndoStay;
+  else
+    // default click event
+    mi.OnClick := form1.PopupItemClick;
+  end;
+  form1.popup.Items[ID].Add(mi);
+end;
+
 function EnumWindowsProc(Wnd: HWND; lParam: lParam): BOOL; stdcall;
 var
   miTop, miBottom: TMenuItem;
@@ -160,21 +190,10 @@ begin
       and (lowercase(LeftStr(txt, length('editplug'))) <> 'editplug' )then
     begin
       CaptionStr := txt + ' - Handle: ' + IntToStr(Wnd);
-      miTop := TMenuItem.create(form1.popup);
-      miTop.caption := CaptionStr;
-      miTop.OnClick := form1.PopupItemClick;
-      miBottom := TMenuItem.create(form1.popup);
-      miBottom.caption:= CaptionStr;
-      miBottom.OnClick := form1.PopupItemClick;
-      // add available windows to both submenus as items
-      // inc(form1.MenuItemCount);
-      // OldName := mi.Name;
-      // mi.Name := 'TopMi' + OldName + inttostr(form1.MenuItemCount);
-      // showmessage('NAME: ' + mi.Name);
-      form1.popup.Items[SUB_TOP].Add(miTop);
-      // mi.Name := 'BottomMi' + OldName + inttostr(form1.MenuItemCount);
-      // showmessage('NAME: ' + mi.Name);
-      form1.popup.Items[SUB_BOTTOM].Add(miBottom);
+      AddMenuItem(CaptionStr, SUB_TOP);
+      AddMenuItem(CaptionStr, SUB_BOTTOM);
+      AddMenuItem(CaptionStr, SUB_STAYONTOP);
+      AddMenuItem(CaptionStr, SUB_UNDOSTAY);      
     end;
   end;
 end;
@@ -225,6 +244,45 @@ begin
   WinToLockBottom := 0;
 end;
 
+// use windows api to make a window stay on top of all other windows
+procedure StayOnTop(h: HWND);
+begin
+  SetWindowPos(h, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE or SWP_SHOWWINDOW);
+end;
+
+// undo stayontop with windows api
+procedure UndoStayOnTop(h: HWND);
+begin
+  SetWindowPos(h, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOSIZE or SWP_NOMOVE or SWP_SHOWWINDOW);
+end;
+
+// Stay on top feature
+procedure TForm1.PopupItemStayOnTopClick(Sender: TObject);
+var
+  h: HWND;
+  mi: TMenuItem;
+begin
+  if sender is TMenuItem then begin
+    mi := sender as TMenuItem;
+    h := FindHandle(mi.caption);
+    // force window to stay on top
+    if mi.Parent.Name = 'mStayOnTop' then StayOnTop(h);
+  end;
+end;
+
+procedure TForm1.PopupItemUndoStay(Sender: TObject);
+var
+  h: HWND;
+  mi: TMenuItem;
+begin
+  if sender is TMenuItem then begin
+    mi := sender as TMenuItem;
+    h := FindHandle(mi.caption);
+    // force window to stay on top
+    if mi.Parent.Name = 'mUndoStayOnTop' then UndoStayOnTop(h);
+  end;
+end;
+
 procedure TForm1.PopupItemClick(Sender: TObject);
 var
   h: HWND;
@@ -234,14 +292,14 @@ begin
     mi := sender as TMenuItem;
     h := FindHandle(mi.caption);
     // Top panel
-    if (sender as TMenuItem).Parent.Name = 'mTopPan' then begin
+    if mi.Parent.Name = 'mTopPan' then begin
       UnlockCurrentWinTop;
       WinToLockTop := h;
       windows.setparent(WinToLockTop, WinPanTop.handle);
       MoveAppWinTop;
     end;
     // Bottom panel
-    if (sender as TMenuItem).Parent.Name = 'mBottomPan' then begin
+    if mi.Parent.Name = 'mBottomPan' then begin
       UnlockCurrentWinBottom;
       WinToLockBottom := h;
       windows.setparent(WinToLockBottom, WinPanBottom.handle);
@@ -259,6 +317,7 @@ var
 begin
   popup.Items[SUB_TOP].Clear;
   popup.Items[SUB_BOTTOM].Clear;
+  popup.Items[SUB_STAYONTOP].Clear;
   EnumWindows(@EnumWindowsProc, Param);
   MenuItemCount := 0;
 end;
@@ -271,15 +330,42 @@ begin
   if GetCursorPos(pnt) then Popup.Popup(pnt.X, pnt.Y);
 end;
 
+// force refresh of screen, otherwise window is not redrawn nicely
+procedure ForceWinRedraw(pan: TPanel; han: HWND);
+var h: HDC;
+begin
+//  pan.Invalidate;
+//  InvalidateRect(pan.Handle, nil, false);
+//  InvalidateRect(han, nil, false);
+//  pan.Update;
+//  pan.Repaint;
+//  Application.ProcessMessages;
+//  RedrawWindow(han, nil, 0, RDW_INVALIDATE or RDW_NOCHILDREN);
+
+  h := GetWindowDC(han);
+  SendMessage(han, WM_PAINT, h, 0);
+//  SendMessage(han, WM_
+  ReleaseDC(han, h);
+  SetFocus(han);
+end;
+
 // resize app window to panel size
 procedure TForm1.MoveAppWinTop;
+var h: hdc;
 begin
+{  h := GetWindowDC(WinPanTop.Handle);
+  SendMessage(WinPanTop.Handle, WM_PAINT, h, 0);
+  ReleaseDC(WinPanTop.Handle, h);
+}
+//  ForceWinRedraw(WinPanTop, WinToLockTop);
   MoveWindow(WinToLockTop, 0, 0, WinPanTop.Width, WinPanTop.Height, true);
+//  ForceWinRedraw(WinPanTop, WinToLockTop);
 end;
 
 procedure TForm1.MoveAppWinBottom;
 begin
   MoveWindow(WinToLockBottom, 0, 0, WinPanBottom.Width, WinPanBottom.Height, true);
+  ForceWinRedraw(WinPanBottom, WinToLockBottom);
 end;
 
 procedure TForm1.WinPanTopResize(Sender: TObject);
@@ -360,6 +446,11 @@ end;
 procedure TForm1.bBorderClick(Sender: TObject);
 begin
   if bBorder.down then EnableBorder(true) else EnableBorder(false);
+end;
+
+procedure TForm1.WMExitSizeMove(var Msg: TMessage); {message WM_EXITSIZEMOVE;}
+begin
+  ShowMessage('Panel Resize!');
 end;
 
 initialization

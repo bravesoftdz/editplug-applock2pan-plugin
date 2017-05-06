@@ -145,5 +145,15 @@ object Form1: TForm1
       object TMenuItem
       end
     end
+    object mStayOnTop: TMenuItem
+      Caption = 'Just StayOnTop'
+      object TMenuItem
+      end
+    end
+    object mUndoStayOnTop: TMenuItem
+      Caption = 'Undo StayOnTop'
+      object TMenuItem
+      end
+    end
   end
 end
