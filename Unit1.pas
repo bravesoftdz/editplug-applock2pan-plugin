@@ -66,6 +66,7 @@ type
     procedure bBorderClick(Sender: TObject);
     procedure edFilterKeyPress(Sender: TObject; var Key: Char);
     procedure edFilterEnter(Sender: TObject);
+    procedure edFilterClick(Sender: TObject);
   private
     { Private declarations }
     FirstShow: boolean;
@@ -415,7 +416,6 @@ begin
 
   h := GetWindowDC(han);
   SendMessage(han, WM_PAINT, h, 0);
-//  SendMessage(han, WM_
   ReleaseDC(han, h);
   SetFocus(han);
 end;
@@ -424,13 +424,7 @@ end;
 procedure TForm1.MoveAppWinTop;
 var h: hdc;
 begin
-{  h := GetWindowDC(WinPanTop.Handle);
-  SendMessage(WinPanTop.Handle, WM_PAINT, h, 0);
-  ReleaseDC(WinPanTop.Handle, h);
-}
-//  ForceWinRedraw(WinPanTop, WinToLockTop);
   MoveWindow(WinToLockTop, 0, 0, WinPanTop.Width, WinPanTop.Height, true);
-//  ForceWinRedraw(WinPanTop, WinToLockTop);
 end;
 
 procedure TForm1.MoveAppWinBottom;
@@ -448,7 +442,6 @@ procedure TForm1.WinPanBottomResize(Sender: TObject);
 begin
   if WinToLockBottom <> 0 then MoveAppWinBottom;
 end;
-
 
 procedure TForm1.bUnlockClick(Sender: TObject);
 begin
@@ -532,9 +525,22 @@ begin
   end;
 end;
 
+// delete default "f i l t e r" placeholder text
 procedure TForm1.edFilterEnter(Sender: TObject);
 begin
   if edFilter.text = 'f i l t e r' then edFilter.text := '';
+end;
+
+// if user clicks on it, select it all, unless a second click
+procedure TForm1.edFilterClick(Sender: TObject);
+const i: integer = 0;  // writable const compiler switch must be on
+begin
+  inc(i);
+  if i < 2 then begin
+    edFilter.SelectAll;
+  end else begin
+    i := 0
+  end;
 end;
 
 initialization

@@ -112,6 +112,7 @@ object Form1: TForm1
       ParentFont = False
       TabOrder = 2
       Text = 'f i l t e r'
+      OnClick = edFilterClick
       OnEnter = edFilterEnter
       OnKeyPress = edFilterKeyPress
     end
