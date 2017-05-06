@@ -188,6 +188,11 @@ begin
   AddMenuItem(CaptionStr, SUB_UNDOSTAY);
 end;
 
+function MakeCaption(txt: string; wnd: HWND): string;
+begin
+  result := txt + ' - Handle: ' + IntToStr(wnd);
+end;
+
 function EnumWindowsProc(Wnd: HWND; lParam: lParam): BOOL; stdcall;
 var
   miTop, miBottom: TMenuItem;
@@ -204,7 +209,7 @@ begin
     if (wnd <> epGetMainWinHandle)
       and (lowercase(LeftStr(txt, length('editplug'))) <> 'editplug' )then
     begin
-      CaptionStr := txt + ' - Handle: ' + IntToStr(Wnd);
+      CaptionStr := MakeCaption(txt, Wnd);
       AddMenuItems(CaptionStr);
     end;
   end;
@@ -231,7 +236,7 @@ begin
     begin
       substr := lowercase(form1.edFilter.text);
       if pos(substr, lowercase(txt)) > 0 then begin
-        CaptionStr := txt;
+        CaptionStr := MakeCaption(txt, Wnd);
         AddMenuItems(CaptionStr);
       end;
     end;
